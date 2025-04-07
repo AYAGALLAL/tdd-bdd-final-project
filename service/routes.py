@@ -120,10 +120,6 @@ def get_products(product_id):
     return product.serialize(), status.HTTP_200_OK
         
 
-#
-# PLACE YOUR CODE HERE TO READ A PRODUCT
-#
-
 ######################################################################
 # U P D A T E   A   P R O D U C T
 ######################################################################
