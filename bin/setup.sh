@@ -3,46 +3,65 @@ echo "**************************************************"
 echo " Setting up TDD/BDD Final Project Environment"
 echo "**************************************************"
 
-echo "*** Installing Python 3.9 and Virtual Environment"
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y python3.9 python3.9-venv
+# Check if running in Git Bash on Windows
+if [[ "$OSTYPE" == "msys" ]]; then
+  echo "*** Windows (Git Bash) detected - using Windows-specific setup"
+  
+  # Python installation (assuming Python 3.9+ is already installed and in PATH)
+  echo "*** Checking Python version..."
+  python --version || (
+    echo "ERROR: Python not found. Please install Python 3.9+ from python.org and check 'Add to PATH' during installation."
+    exit 1
+  )
 
-echo "*** Making Python 3.9 the default..."
-sudo update-alternatives --remove-all python3
-sudo update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.9 1
+  # Virtual environment
+  echo "*** Creating Python virtual environment..."
+  python -m venv venv || (
+    echo "ERROR: Failed to create virtual environment"
+    exit 1
+  )
 
-echo "*** Checking the Python version..."
-python3 --version
+  # Activate venv (Windows path)
+  echo "*** Activating virtual environment..."
+  source venv/Scripts/activate || (
+    echo "ERROR: Failed to activate virtual environment"
+    exit 1
+  )
 
-echo "*** Creating a Python virtual environment"
-python3 -m venv ~/venv
+  # Install Python dependencies
+  echo "*** Installing Python dependencies..."
+  pip install --upgrade pip wheel || exit 1
+  pip install -r requirements.txt || exit 1
 
-echo "*** Configuring the developer environment..."
-echo "# TDD/BDD Final Project additions" >> ~/.bashrc
-echo "export GITHUB_ACCOUNT=$GITHUB_ACCOUNT" >> ~/.bashrc
-echo 'export PS1="\[\e]0;\u:\W\a\]${debian_chroot:+($debian_chroot)}\[\033[01;32m\]\u\[\033[00m\]:\[\033[01;34m\]\W\[\033[00m\]\$ "' >> ~/.bashrc
-echo "source ~/venv/bin/activate" >> ~/.bashrc
+  # Docker setup
+  echo "*** Checking Docker..."
+  docker --version || (
+    echo "ERROR: Docker not found. Please install Docker Desktop from docker.com and ensure it's running."
+    exit 1
+  )
 
-echo "*** Installing Selenium and Chrome for BDD"
-sudo apt-get update
-sudo DEBIAN_FRONTEND=noninteractive apt-get install -y sqlite3 ca-certificates chromium-driver python3-selenium
+  # Start PostgreSQL container
+  echo "*** Starting PostgreSQL container..."
+  docker run --name postgres \
+    -e POSTGRES_PASSWORD=postgres \
+    -v postgres:/var/lib/postgresql/data \
+    -p 5432:5432 \
+    -d postgres:alpine || (
+    echo "ERROR: Failed to start PostgreSQL container"
+    exit 1
+  )
 
-echo "*** Installing Python depenencies..."
-source ~/venv/bin/activate && python3 -m pip install --upgrade pip wheel
-source ~/venv/bin/activate && pip install -r requirements.txt
+  # Verify container
+  echo "*** Checking running containers..."
+  docker ps
 
-echo "*** Establishing .env file"
-cp dot-env-example .env
-
-echo "*** Starting the Postgres Docker container..."
-make db
-
-echo "*** Checking the Postgres Docker container..."
-docker ps
+else
+  echo "ERROR: This script is only configured for Windows Git Bash"
+  exit 1
+fi
 
 echo "**************************************************"
 echo " TDD/BDD Final Project Environment Setup Complete"
 echo "**************************************************"
 echo ""
 echo "Use 'exit' to close this terminal and open a new one to initialize the environment"
-echo ""
